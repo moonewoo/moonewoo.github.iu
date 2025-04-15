@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <title>지구와 타원형 달의 공전운동과 해수면 상승과 하강</title>
+</head>
+<body>
+  <script>
+    class CelestialBody {
+      constructor(radius, distance, angleSpeed, color) {
+        this.radius = radius;
+        this.distance = distance;
+        this.angle = 0;
+        this.angleSpeed = angleSpeed;
+        this.color = color;
+      }
+
+      update() {
+        this.angle += this.angleSpeed;
+      }
+
+      show(parentX = 0, parentY = 0) {
+        fill(this.color);
+        let x = this.distance * cos(this.angle) + parentX;
+        let y = this.distance * sin(this.angle) + parentY;
+        ellipse(x, y, this.radius * 2);
+        return { x, y };
+      }
+    }
+
+    class SeaLevel {
+      constructor(baseLevel, amplitude, speed, color) {
+        this.baseLevel = baseLevel;
+        this.amplitude = amplitude;
+        this.speed = speed;
+        this.color = color;
+      }
+
+      update(distanceBetweenEarthAndMoon) {
+        // 거리가 가까울수록 해수면이 상승, 멀어질수록 하강
+        this.baseLevel = this.amplitude * sin(frameCount * this.speed) - 20 / distanceBetweenEarthAndMoon;
+      }
+
+      show() {
+        fill(this.color);
+        rect(-width / 2, this.baseLevel, width, height);
+      }
+    }
+
+    let earth;
+    let moon;
+    let sea;
+
+    function setup() {
+      createCanvas(600, 400);
+      sea = new SeaLevel(100, 30, 0.05, color(0, 0, 255)); // 파란색
+      earth = new CelestialBody(100, 0, 0.01, color(0, 191, 255)); // 파란색
+      moon = new CelestialBody(30, 200, 0.03, color(255)); // 흰색
+      moon.angle = PI; // 달의 초기 각도를 PI로 설정하여 지구의 위에서 시작
+    }
+
+    function draw() {
+      background(0);
+      translate(width / 2, height / 2); // 중심을 캔버스 중앙으로 이동
+
+      let distanceBetweenEarthAndMoon = dist(earth.distance * cos(earth.angle), earth.distance * sin(earth.angle), moon.distance * cos(moon.angle), moon.distance * sin(moon.angle));
+
+      sea.update(distanceBetweenEarthAndMoon);
+      sea.show();
+
+      let earthPos = earth.show();
+      moon.showElliptical(earthPos.x, earthPos.y); // 타원으로 달의 공전 표현
+
+      earth.update();
+      moon.update();
+    }
+
+    CelestialBody.prototype.showElliptical = function(parentX, parentY) {
+      fill(this.color);
+      let x = this.distance * cos(this.angle) * 1.5 + parentX; // 타원의 x축을 늘려 타원으로 변환
+      let y = this.distance * sin(this.angle) + parentY;
+      ellipse(x, y, this.radius * 2);
+      return { x, y };
+    };
+  </script>
+</body>
+</html>
